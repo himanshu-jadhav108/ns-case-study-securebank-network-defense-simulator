@@ -1,0 +1,25 @@
+# OPTIONAL, instructor-approved lab only. Run from the project root:
+#   docker compose -f local_lab/docker/docker-compose.yml up --build
+# Segmentation idea: 'lab_internal' has NO route to the outside world (internal: true).
+# The 'client' container can reach 'bank' only through that internal network.
+# Nothing is published to the host except 127.0.0.1:8080 (loopback) for the bank service.
+services:
+  bank:
+    build:
+      context: ../..
+      dockerfile: local_lab/docker/Dockerfile
+    networks: [lab_internal]
+    ports:
+      - "127.0.0.1:8080:8080"
+  client:
+    build:
+      context: ../..
+      dockerfile: local_lab/docker/Dockerfile
+    environment:
+      LAB_ALLOWED_TARGETS: bank
+    command: ["python", "local_lab/test_harness.py", "--load", "--target", "http://bank:8080", "--burst", "200", "--legit", "30", "--seconds", "15"]
+    depends_on: [bank]
+    networks: [lab_internal]
+networks:
+  lab_internal:
+    internal: true
